@@ -1,0 +1,731 @@
+{
+  "info": {
+    "_postman_id": "8a513344-4b9d-45d3-81cc-2513ad535a05",
+    "name": "04 1 - GET /booking/:id (BG-01..BG-13)",
+    "description": "Тест-кейсы для GET /booking/:id (BG-01..BG-13). Папки идут в порядке выполнения BG-01 -> BG-13. Папка PRECONDITION создаёт бронь Jim Brown и сохраняет её id в bookingId. Для BG-12 отдельно создаётся и удаляется бронь (deletedBookingId). Переменные коллекции: baseUrl, token, bookingId, deletedBookingId, notExistId.\n\nМетки папок: Auth: none — публичный эндпоинт, авторизация не требуется. Auth: cookie — в шагах папки используется токен, полученный из POST /auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PRECONDITION Создать бронь + получить токен",
+      "description": "Auth: none\n\nОба шага публичные: POST /auth выдаёт токен, POST /booking создаёт бронь.",
+      "item": [
+        {
+          "name": "Step 1 - POST /auth (получить токен)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('token не пустой', () => pm.expect(json.token).to.be.a('string').and.not.empty);\npm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"password123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - POST /booking (создать бронь Jim Brown)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('bookingId', json.bookingid);\nconsole.log('PRECONDITION bookingId =', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-01 Получение существующей брони",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('Все поля схемы Booking присутствуют', () => {\n    pm.expect(json).to.have.property('firstname');\n    pm.expect(json).to.have.property('lastname');\n    pm.expect(json).to.have.property('totalprice');\n    pm.expect(json).to.have.property('depositpaid');\n    pm.expect(json).to.have.property('bookingdates');\n    pm.expect(json.bookingdates).to.have.property('checkin');\n    pm.expect(json.bookingdates).to.have.property('checkout');\n});\npm.test('Данные совпадают с созданными', () => {\n    pm.expect(json).to.deep.include({\n        firstname: 'Jim',\n        lastname: 'Brown',\n        totalprice: 111,\n        depositpaid: true,\n        bookingdates: { checkin: '2018-01-01', checkout: '2019-01-01' }\n    });\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-02 XML",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - Accept XML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst ct = pm.response.headers.get('Content-Type') || '';\nconst body = pm.response.text();\nconsole.log('BG-02 Content-Type ответа:', ct);\nconsole.log('BG-02 первые 200 символов:', body.substring(0, 200));\npm.test('Ответ содержит XML-подобные данные (firstname/lastname)', () => {\n    pm.expect(body).to.include('firstname');\n    pm.expect(body).to.include('lastname');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-03 form-urlencoded",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - Accept x-www-form-urlencoded",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ct = pm.response.headers.get('Content-Type') || '';\nconsole.log('BG-03 actual status:', pm.response.code);\nconsole.log('BG-03 Content-Type ответа:', ct);\nconsole.log('BG-03 body:', pm.response.text());\npm.test('Ответ получен, без 5xx', () => pm.expect(pm.response.code).to.be.below(500));\npm.test('Поведение зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-04 Типы полей",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - проверка типов",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('totalprice - число', () => pm.expect(json.totalprice).to.be.a('number'));\npm.test('depositpaid - boolean', () => pm.expect(json.depositpaid).to.be.a('boolean'));\npm.test('checkin - строка формата YYYY-MM-DD', () => {\n    pm.expect(json.bookingdates.checkin).to.be.a('string');\n    pm.expect(json.bookingdates.checkin).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);\n});\npm.test('checkout - строка формата YYYY-MM-DD', () => {\n    pm.expect(json.bookingdates.checkout).to.be.a('string');\n    pm.expect(json.bookingdates.checkout).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-05 Без авторизации",
+      "description": "Auth: none\n\nКейс явно проверяет, что чтение публичное - токен намеренно не отправляется, ожидается 200.",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - без токена",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (чтение публичное)', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('Данные брони получены', () => {\n    pm.expect(json).to.have.property('firstname', 'Jim');\n    pm.expect(json).to.have.property('lastname', 'Brown');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-06 Несуществующий id",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/999999999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-06 actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));\npm.test('Тело ответа - Not Found', () => pm.expect(pm.response.text()).to.include('Not Found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "999999999"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-07 id = 0",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-07 actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "0"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-08 Отрицательный id",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/-1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-08 actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "-1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-09 Нечисловой id",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-09 actual status:', pm.response.code);\npm.test('Status 404 или 400', () => pm.expect([404, 400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "abc"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-10 Дробный id",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/1.5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-10 actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/1.5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "1.5"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-11 Очень большой id",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/99999999999999999999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-11 actual status:', pm.response.code);\npm.test('Нет 5xx', () => pm.expect(pm.response.code).to.be.below(500));\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/99999999999999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "99999999999999999999"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-12 Удалённая бронь",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) публичный. Step 2 (DELETE /booking/:id) требует токен - используется заголовок Cookie: token={{token}}, полученный в PRECONDITION. Step 3 (GET) публичный.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать временную бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('deletedBookingId', json.bookingid);\nconsole.log('BG-12 временная бронь:', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{deletedBookingId}} (с токеном)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-12 DELETE status:', pm.response.code);\npm.test('Status 201 (успешное удаление)', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46cGFzc3dvcmQxMjM="
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{deletedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{deletedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - GET /booking/{{deletedBookingId}} (должно быть 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BG-12 GET after DELETE status:', pm.response.code);\npm.test('Status 404 (бронь удалена)', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{deletedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{deletedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BG-13 Неверный Accept",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - Accept text/html",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ct = pm.response.headers.get('Content-Type') || '';\nconsole.log('BG-13 actual status:', pm.response.code);\nconsole.log('BG-13 Content-Type ответа:', ct);\nconsole.log('BG-13 body первые 200 символов:', pm.response.text().substring(0, 200));\n// В доке поведение не описано - фиксируем факт\npm.test('Поведение зафиксировано (418 / ошибка / JSON) - см. console.log', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "deletedBookingId",
+      "value": ""
+    },
+    {
+      "key": "notExistId",
+      "value": "999999999"
+    }
+  ]
+}

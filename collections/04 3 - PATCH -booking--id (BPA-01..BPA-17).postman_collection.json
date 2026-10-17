@@ -1,0 +1,1342 @@
+{
+  "info": {
+    "_postman_id": "8b9eaff2-38ac-4349-b60b-b35e10680393",
+    "name": "04 3 - PATCH /booking/:id (BPA-01..BPA-17)",
+    "description": "Тест-кейсы для PATCH /booking/:id (BPA-01..BPA-17). Папки идут в порядке выполнения BPA-01 -> BPA-17. Папка PRECONDITION получает токен и создаёт бронь Jim Brown (bookingId). BPA-01 меняет firstname на Anna, поэтому последующие папки, которым нужно исходное состояние, при необходимости снимают снимок через GET. Переменные коллекции: baseUrl, token, bookingId, notExistId, bpa01Snapshot, bpa12Snapshot, bpa14Snapshot, bpa16Snapshot.\n\nМетки папок: Auth: none — публичный эндпоинт; Auth: cookie — токен в Cookie: token={{token}}; Auth: basic — Basic Auth admin:password123; Auth: none (negative test) — негативный кейс, авторизация намеренно не отправляется; Auth: cookie (invalid) — токен передан, но намеренно невалиден; Auth: bearer (unsupported) — схема Bearer не поддерживается API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PRECONDITION Токен + создать бронь",
+      "description": "Auth: none\n\nОба шага публичные: POST /auth выдаёт токен, POST /booking создаёт бронь.",
+      "item": [
+        {
+          "name": "Step 1 - POST /auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('token не пустой', () => pm.expect(json.token).to.be.a('string').and.not.empty);\npm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"password123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - POST /booking (Jim Brown)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('bookingId', json.bookingid);\nconsole.log('PRECONDITION bookingId =', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-01 Обновление одного поля (firstname) с токеном",
+      "description": "Auth: cookie\n\nШаг Snapshot (GET) публичный. Шаг PATCH защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Snapshot - GET перед PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('bpa01Snapshot', JSON.stringify(json));\nconsole.log('BPA-01 снимок до:', JSON.stringify(json));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /booking/{{bookingId}} - {\"firstname\":\"Anna\"}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname обновлён на Anna', () => pm.expect(json.firstname).to.eql('Anna'));\nconst prev = JSON.parse(pm.collectionVariables.get('bpa01Snapshot') || '{}');\npm.test('lastname не изменился', () => pm.expect(json.lastname).to.eql(prev.lastname));\npm.test('totalprice не изменился', () => pm.expect(json.totalprice).to.eql(prev.totalprice));\npm.test('depositpaid не изменился', () => pm.expect(json.depositpaid).to.eql(prev.depositpaid));\npm.test('bookingdates не изменились', () => pm.expect(json.bookingdates).to.deep.eql(prev.bookingdates));\npm.test('additionalneeds не изменился', () => pm.expect(json.additionalneeds).to.eql(prev.additionalneeds));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Anna\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-02 Обновление с Basic Auth",
+      "description": "Auth: basic\n\nЗащищённый PATCH /booking/:id с Basic Auth admin:password123.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - Basic Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = Anna (изменён через Basic Auth)', () => pm.expect(json.firstname).to.eql('Anna'));\npm.test('lastname = Brown', () => pm.expect(json.lastname).to.eql('Brown'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46cGFzc3dvcmQxMjM="
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Anna\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-03 Несколько полей",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - firstname + totalprice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = Anna', () => pm.expect(json.firstname).to.eql('Anna'));\npm.test('totalprice = 200', () => pm.expect(json.totalprice).to.eql(200));\npm.test('lastname не затронут', () => pm.expect(json.lastname).to.eql('Brown'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Anna\",\"totalprice\":200}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-04 Только bookingdates",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - bookingdates",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('checkin = 2020-01-01', () => pm.expect(json.bookingdates.checkin).to.eql('2020-01-01'));\npm.test('checkout = 2020-02-01', () => pm.expect(json.bookingdates.checkout).to.eql('2020-02-01'));\npm.test('firstname не затронут', () => pm.expect(json.firstname).to.eql('Anna'));\npm.test('totalprice не затронут', () => pm.expect(json.totalprice).to.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"bookingdates\":{\"checkin\":\"2020-01-01\",\"checkout\":\"2020-02-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-05 depositpaid true->false",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - depositpaid:false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('depositpaid = false', () => pm.expect(json.depositpaid).to.eql(false));\npm.test('firstname не затронут', () => pm.expect(json.firstname).to.eql('Anna'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"depositpaid\":false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-06 Все поля через PATCH",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - все поля",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('Все поля обновлены', () => {\n    pm.expect(json.firstname).to.eql('PatchFull');\n    pm.expect(json.lastname).to.eql('Patched');\n    pm.expect(json.totalprice).to.eql(555);\n    pm.expect(json.depositpaid).to.eql(true);\n    pm.expect(json.bookingdates.checkin).to.eql('2021-03-01');\n    pm.expect(json.bookingdates.checkout).to.eql('2021-04-01');\n    pm.expect(json.additionalneeds).to.eql('Dinner');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"PatchFull\",\"lastname\":\"Patched\",\"totalprice\":555,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2021-03-01\",\"checkout\":\"2021-04-01\"},\"additionalneeds\":\"Dinner\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-07 XML-ответ",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - Accept XML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst ct = pm.response.headers.get('Content-Type') || '';\nconst body = pm.response.text();\nconsole.log('BPA-07 Content-Type ответа:', ct);\nconsole.log('BPA-07 первые 200 символов:', body.substring(0, 200));\npm.test('Ответ содержит поля брони', () => {\n    pm.expect(body).to.include('firstname');\n    pm.expect(body).to.include('lastname');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"PatchFull\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-08 Сохранение изменений",
+      "description": "Auth: cookie\n\nШаг PATCH защищённый - Cookie: token={{token}}. Шаг GET публичный.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - lastname = Saved",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('lastname = Saved', () => pm.expect(json.lastname).to.eql('Saved'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lastname\":\"Saved\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /booking/{{bookingId}} - проверить сохранение",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('lastname = Saved (сохранено)', () => pm.expect(json.lastname).to.eql('Saved'));\npm.test('firstname = PatchFull (не затронут последним PATCH)', () => pm.expect(json.firstname).to.eql('PatchFull'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-09 Без авторизации",
+      "description": "Auth: none (negative test - expecting 403)\n\nНегативный кейс: PATCH /booking/:id без Cookie и Authorization. Ожидается 403 Forbidden.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - без авторизации",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-09 actual status:', pm.response.code);\npm.test('Status 403', () => pm.response.to.have.status(403));\npm.test('Тело ответа - Forbidden', () => pm.expect(pm.response.text()).to.include('Forbidden'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Hacker\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-10 Неверный токен",
+      "description": "Auth: cookie (invalid token - expecting 403)\n\nНегативный кейс: PATCH /booking/:id с Cookie: token=invalid. Ожидается 403.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - token=invalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-10 actual status:', pm.response.code);\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token=invalid"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Hacker\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-11 Несуществующий id",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/999999999 с валидным Cookie: token={{token}}. Ожидается 405 (фактическое поведение сервиса).",
+      "item": [
+        {
+          "name": "PATCH /booking/999999999 - с токеном",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-11 actual status:', pm.response.code);\nconsole.log('BPA-11 body:', pm.response.text());\npm.test('Status 405 (фактическое поведение сервиса)', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Ghost\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "999999999"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-12 Пустое тело {}",
+      "description": "Auth: cookie\n\nШаги Snapshot и Check (GET) публичные. Шаг PATCH защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Snapshot - GET перед PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\npm.collectionVariables.set('bpa12Snapshot', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /booking/{{bookingId}} - {}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-12 actual status:', pm.response.code);\nconsole.log('BPA-12 body:', pm.response.text());\npm.test('Поведение зафиксировано (200 без изменений или 4xx)', () => {\n    pm.expect([200, 400, 422]).to.include(pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check - GET (снимок сравнения)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\nconst prev = JSON.parse(pm.collectionVariables.get('bpa12Snapshot') || '{}');\nconsole.log('BPA-12 состояние до: ', JSON.stringify(prev));\nconsole.log('BPA-12 состояние после:', JSON.stringify(json));\npm.test('Поведение PATCH {} зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-13 Невалидный JSON",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}} и битым JSON-телом.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - broken JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-13 actual status:', pm.response.code);\npm.test('Статус 4xx или 5xx', () => pm.expect(pm.response.code).to.be.oneOf([400, 500]));\npm.test('Данные не изменены', () => pm.expect(pm.response.text()).to.not.include('BrokenPatch'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"BrokenPatch\",",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-14 Неверный тип",
+      "description": "Auth: cookie\n\nШаги Snapshot и Check (GET) публичные. Шаг PATCH защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Snapshot - GET перед PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\npm.collectionVariables.set('bpa14Snapshot', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /booking/{{bookingId}} - totalprice:\"abc\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-14 actual status:', pm.response.code);\nconsole.log('BPA-14 body:', pm.response.text());\npm.test('Поведение зафиксировано (ошибка или не изменено)', () => {\n    pm.expect([200, 400, 500]).to.include(pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"totalprice\":\"abc\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check - GET (сравнение)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\nconst prev = JSON.parse(pm.collectionVariables.get('bpa14Snapshot') || '{}');\nconsole.log('BPA-14 totalprice до: ', prev.totalprice, '| после:', json.totalprice);\npm.test('totalprice не стал строкой \"abc\"', () => {\n    pm.expect(json.totalprice).to.not.eql('abc');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-15 Неизвестное поле",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/:id с Cookie: token={{token}} и полем foo, которого нет в схеме Booking.",
+      "item": [
+        {
+          "name": "PATCH /booking/{{bookingId}} - {\"foo\":\"bar\"}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-15 actual status:', pm.response.code);\nconsole.log('BPA-15 body:', pm.response.text());\npm.test('Ответ получен, без 5xx', () => pm.expect(pm.response.code).to.be.below(500));\nlet json = null;\ntry { json = pm.response.json(); } catch (e) {}\nif (json && pm.response.code === 200) {\n    pm.test('Поле foo отсутствует в ответе (проигнорировано)', () => {\n        pm.expect(json).to.not.have.property('foo');\n    });\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"foo\":\"bar\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-16 Пустое значение",
+      "description": "Auth: cookie\n\nШаг Snapshot (GET) публичный. Шаг PATCH защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Snapshot - GET перед PATCH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\npm.collectionVariables.set('bpa16Snapshot', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /booking/{{bookingId}} - {\"firstname\":\"\"}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-16 actual status:', pm.response.code);\nconsole.log('BPA-16 body:', pm.response.text());\npm.test('Ответ получен, без 5xx', () => pm.expect(pm.response.code).to.be.below(500));\npm.test('Поведение с пустым значением зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BPA-17 Нечисловой id",
+      "description": "Auth: cookie\n\nЗащищённый PATCH /booking/abc с Cookie: token={{token}}. Ожидается 404 или 405.",
+      "item": [
+        {
+          "name": "PATCH /booking/abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BPA-17 actual status:', pm.response.code);\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "abc"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "notExistId",
+      "value": "999999999"
+    },
+    {
+      "key": "bpa01Snapshot",
+      "value": ""
+    },
+    {
+      "key": "bpa12Snapshot",
+      "value": ""
+    },
+    {
+      "key": "bpa14Snapshot",
+      "value": ""
+    },
+    {
+      "key": "bpa16Snapshot",
+      "value": ""
+    }
+  ]
+}

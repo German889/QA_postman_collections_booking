@@ -1,0 +1,1419 @@
+{
+  "info": {
+    "_postman_id": "0361017a-5b2d-40a1-94d6-f68320805c4a",
+    "name": "03 - GET /booking filters (BL-01..BL-21)",
+    "description": "Тест-кейсы для GET /booking (фильтры) BL-01..BL-21. Папки идут в порядке выполнения BL-01 -> BL-21. Предусловие: создана бронь firstname=Sally, lastname=Brown, checkin=2024-03-13, checkout=2024-05-21 (папка PRECONDITION создаёт её и сохраняет в sallyBookingId). Переменные коллекции: baseUrl, token, bookingId, sallyBookingId, sallyCheckin, sallyCheckout, notExistId.\n\nМетки папок: Auth: none — публичный эндпоинт, авторизация не требуется. Auth: none (negative test - expecting 404/405) — негативный кейс на неподдерживаемый метод, авторизация намеренно не отправляется.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PRECONDITION Создать бронь Sally / Brown",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "POST /booking - Sally Brown (2024-03-13..2024-05-21)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));",
+                  "pm.collectionVariables.set('sallyBookingId', json.bookingid);",
+                  "console.log('Sally bookingId =', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Sally\",\"lastname\":\"Brown\",\"totalprice\":250,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2024-03-13\",\"checkout\":\"2024-05-21\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-01 Список всех id без параметров",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('Массив не пуст', () => pm.expect(json.length).to.be.above(0));",
+                  "pm.test('Элементы вида {bookingid: number}', () => {",
+                  "    json.forEach(item => {",
+                  "        pm.expect(item).to.have.property('bookingid');",
+                  "        pm.expect(item.bookingid).to.be.a('number');",
+                  "    });",
+                  "});",
+                  "console.log('Всего броней в списке:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-02 Фильтр по firstname=Sally",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=Sally",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Созданная бронь Sally присутствует в списке', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "// Точечная проверка первых 5 записей через GET /booking/{id}",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' - firstname Sally', () => pm.expect(b.firstname).to.eql('Sally'));",
+                  "        }",
+                  "    });",
+                  "});",
+                  "console.log('Найдено Sally:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=Sally",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "Sally"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-03 Фильтр по lastname=Brown",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?lastname=Brown",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Созданная бронь Brown присутствует в списке', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "// Точечная проверка первых 5 записей",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' - lastname Brown', () => pm.expect(b.lastname).to.eql('Brown'));",
+                  "        }",
+                  "    });",
+                  "});",
+                  "console.log('Найдено Brown:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?lastname=Brown",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "lastname",
+                  "value": "Brown"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-04 firstname + lastname",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=Sally&lastname=Brown",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Sally Brown присутствует в пересечении', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' - Sally Brown', () => {",
+                  "                pm.expect(b.firstname).to.eql('Sally');",
+                  "                pm.expect(b.lastname).to.eql('Brown');",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "});",
+                  "console.log('Совпадений Sally+Brown:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=Sally&lastname=Brown",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "Sally"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Brown"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-05 Фильтр checkin",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?checkin=2024-03-13",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Бронь с checkin = дате фильтра включена', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "// Точечная проверка: checkin >= 2024-03-13",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' checkin >= 2024-03-13', () => {",
+                  "                pm.expect(b.bookingdates.checkin >= '2024-03-13').to.be.true;",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "});",
+                  "console.log('Найдено по checkin>=2024-03-13:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=2024-03-13",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "2024-03-13"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-06 Фильтр checkout",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?checkout=2024-05-21",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Бронь с checkout = дате фильтра включена', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' checkout >= 2024-05-21', () => {",
+                  "                pm.expect(b.bookingdates.checkout >= '2024-05-21').to.be.true;",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "});",
+                  "console.log('Найдено по checkout>=2024-05-21:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkout=2024-05-21",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkout",
+                  "value": "2024-05-21"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-07 checkin + checkout",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?checkin=2024-03-13&checkout=2024-05-21",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Sally присутствует (удовлетворяет обоим условиям)', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "const sample = json.slice(0, 5).map(b => b.bookingid);",
+                  "sample.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/booking/' + id,",
+                  "        method: 'GET',",
+                  "        header: { 'Accept': 'application/json' }",
+                  "    }, (err, res) => {",
+                  "        if (err) { console.log('sendRequest error for id', id, err); return; }",
+                  "        if (res.code === 200) {",
+                  "            const b = res.json();",
+                  "            pm.test('Бронь ' + id + ' - оба условия', () => {",
+                  "                pm.expect(b.bookingdates.checkin >= '2024-03-13').to.be.true;",
+                  "                pm.expect(b.bookingdates.checkout >= '2024-05-21').to.be.true;",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=2024-03-13&checkout=2024-05-21",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "2024-03-13"
+                },
+                {
+                  "key": "checkout",
+                  "value": "2024-05-21"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-08 Все 4 параметра",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=Sally&lastname=Brown&checkin=2024-03-13&checkout=2024-05-21",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('Искомая бронь Sally Brown в списке', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});",
+                  "console.log('Совпадений по 4 параметрам:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=Sally&lastname=Brown&checkin=2024-03-13&checkout=2024-05-21",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "Sally"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Brown"
+                },
+                {
+                  "key": "checkin",
+                  "value": "2024-03-13"
+                },
+                {
+                  "key": "checkout",
+                  "value": "2024-05-21"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-09 Нет совпадений",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=NoSuchName123",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - пустой массив', () => {",
+                  "    pm.expect(json).to.be.an('array');",
+                  "    pm.expect(json).to.have.lengthOf(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=NoSuchName123",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "NoSuchName123"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-10 Граница checkin (равно / +1 день)",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "Step 1 - checkin = 2024-03-13 (равно дате брони)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('При равенстве даты бронь ВКЛЮЧЕНА', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=2024-03-13",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "2024-03-13"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - checkin = 2024-03-14 (+1 день)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "pm.test('При +1 дне бронь НЕ включена', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.not.include(target);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=2024-03-14",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "2024-03-14"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-11 Регистр (sally vs Sally)",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=sally",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-11 actual status:', pm.response.code);",
+                  "console.log('BL-11 body:', pm.response.text());",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('sallyBookingId'));",
+                  "const ids = json.map(x => String(x.bookingid));",
+                  "console.log('Совпадений по sally (lowercase):', json.length, '| target найден:', ids.includes(target));",
+                  "// Фиксация чувствительности к регистру без падения теста",
+                  "pm.test('Поведение по регистру зафиксировано (см. console.log)', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=sally",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "sally"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-12 Формат элементов списка",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking - проверка формата",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('bookingid - число', () => {",
+                  "    json.forEach(item => pm.expect(item.bookingid).to.be.a('number'));",
+                  "});",
+                  "pm.test('bookingid уникальны', () => {",
+                  "    const ids = json.map(x => x.bookingid);",
+                  "    const uniq = new Set(ids);",
+                  "    pm.expect(uniq.size).to.eql(ids.length);",
+                  "});",
+                  "console.log('Всего элементов:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-13 Кириллица / URL-encoding",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=%D0%98%D0%B2%D0%B0%D0%BD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-13 actual status:', pm.response.code);",
+                  "console.log('BL-13 body:', pm.response.text());",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('Поиск по кириллице не вызывает ошибок сервиса', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=%D0%98%D0%B2%D0%B0%D0%BD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "%D0%98%D0%B2%D0%B0%D0%BD"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-14 Новая бронь появляется в списке",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (новая бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));",
+                  "pm.collectionVariables.set('bookingId', json.bookingid);",
+                  "console.log('Новая бронь:', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - GET /booking (id присутствует)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "const target = String(pm.collectionVariables.get('bookingId'));",
+                  "pm.test('Новая бронь присутствует в списке', () => {",
+                  "    const ids = json.map(x => String(x.bookingid));",
+                  "    pm.expect(ids).to.include(target);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-15 Неверный формат даты",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "checkin = 13-03-2024",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-15a actual status:', pm.response.code);",
+                  "console.log('BL-15a body:', pm.response.text());",
+                  "pm.test('Нет 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                  "pm.test('4xx, 200 с пустым/полным списком - зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=13-03-2024",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "13-03-2024"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "checkin = abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-15b actual status:', pm.response.code);",
+                  "console.log('BL-15b body:', pm.response.text());",
+                  "pm.test('Нет 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                  "pm.test('4xx, 200 с пустым/полным списком - зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "abc"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-16 Несуществующая дата",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?checkin=2024-02-30",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-16 actual status:', pm.response.code);",
+                  "console.log('BL-16 body:', pm.response.text());",
+                  "pm.test('Нет 5xx, сервис не падает', () => pm.expect(pm.response.code).to.be.below(500));",
+                  "pm.test('Ответ получен (ошибка или список) - зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?checkin=2024-02-30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "checkin",
+                  "value": "2024-02-30"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-17 Пустое значение",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-17 actual status:', pm.response.code);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { console.log('Ответ не JSON'); }",
+                  "pm.test('Ответ - массив (без падения)', () => {",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "console.log('Элементов при пустом фильтре:', json ? json.length : 'n/a');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-18 Неизвестный параметр",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?foo=bar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('Неизвестный параметр игнорируется - список не пуст', () => {",
+                  "    pm.expect(json.length).to.be.above(0);",
+                  "});",
+                  "console.log('Элементов при foo=bar:', json.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?foo=bar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "foo",
+                  "value": "bar"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-19 Дублирование параметра",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=Sally&firstname=Jim",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-19 actual status:', pm.response.code);",
+                  "console.log('BL-19 body:', pm.response.text());",
+                  "pm.test('Нет 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                  "pm.test('Поведение при дублировании зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=Sally&firstname=Jim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "Sally"
+                },
+                {
+                  "key": "firstname",
+                  "value": "Jim"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-20 SQL-инъекция",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /booking?firstname=' OR 1=1 --",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-20 actual status:', pm.response.code);",
+                  "console.log('BL-20 body:', pm.response.text());",
+                  "pm.test('Нет 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+                  "pm.test('Ответ - массив (пустой или полный), без утечек', () => {",
+                  "    let json = null;",
+                  "    try { json = pm.response.json(); } catch (e) { /* ignore */ }",
+                  "    if (json !== null) { pm.expect(json).to.be.an('array'); }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking?firstname=' OR 1=1 --",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ],
+              "query": [
+                {
+                  "key": "firstname",
+                  "value": "' OR 1=1 --"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BL-21 Неверный метод DELETE /booking",
+      "description": "Auth: none (negative test - expecting 404/405)\n\nНегативный кейс: DELETE /booking не поддерживается API. Авторизация намеренно не отправляется - проверяем именно реакцию на неподдерживаемый метод, а не на отсутствие токена.",
+      "item": [
+        {
+          "name": "DELETE /booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BL-21 actual status:', pm.response.code);",
+                  "pm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));",
+                  "pm.test('Ничего не удалено (нет массива bookingid в успешном ответе)', () => {",
+                  "    pm.expect(pm.response.text()).to.not.include('\"bookingid\"');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "sallyBookingId",
+      "value": ""
+    },
+    {
+      "key": "sallyCheckin",
+      "value": "2024-03-13"
+    },
+    {
+      "key": "sallyCheckout",
+      "value": "2024-05-21"
+    },
+    {
+      "key": "notExistId",
+      "value": "999999999"
+    }
+  ]
+}

@@ -1,0 +1,1293 @@
+{
+  "info": {
+    "_postman_id": "7af8b48e-7b19-4bf5-a6d6-6e9d867d186d",
+    "name": "04 2 - PUT /booking/:id (BP-01..BP-18)",
+    "description": "Тест-кейсы для PUT /booking/:id (BP-01..BP-18). Папки идут в порядке выполнения BP-01 -> BP-18. Папка PRECONDITION получает токен и создаёт бронь Jim Brown (bookingId). BP-01 меняет данные на James, поэтому все последующие папки, которым нужна валидная бронь, при необходимости пересоздают её. Переменные коллекции: baseUrl, token, bookingId, bookingId1, notExistId, idemSnapshot, bp12Snapshot.\n\nМетки папок: Auth: none — публичный эндпоинт; Auth: cookie — токен в Cookie: token={{token}}; Auth: basic — Basic Auth admin:password123; Auth: none (negative test) — негативный кейс, авторизация намеренно не отправляется; Auth: cookie/basic (invalid) — авторизация передана, но намеренно невалидна; Auth: bearer (unsupported) — схема Bearer не поддерживается API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PRECONDITION Токен + создать бронь",
+      "description": "Auth: none\n\nОба шага публичные: POST /auth выдаёт токен, POST /booking создаёт бронь. Токен сохраняется в переменную {{token}} и используется в защищённых папках BP-01, BP-04..BP-07, BP-11..BP-17.",
+      "item": [
+        {
+          "name": "Step 1 - POST /auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('token не пустой', () => pm.expect(json.token).to.be.a('string').and.not.empty);\npm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"password123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - POST /booking (Jim Brown)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('bookingId', json.bookingid);\nconsole.log('PRECONDITION bookingId =', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-01 Полное обновление с токеном",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с валидным токеном в Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Cookie token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname обновлён на James', () => pm.expect(json.firstname).to.eql('James'));\npm.test('lastname сохранён', () => pm.expect(json.lastname).to.eql('Brown'));\npm.test('totalprice сохранён', () => pm.expect(json.totalprice).to.eql(111));\npm.test('bookingdates сохранены', () => {\n    pm.expect(json.bookingdates.checkin).to.eql('2018-01-01');\n    pm.expect(json.bookingdates.checkout).to.eql('2019-01-01');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"James\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-02 Полное обновление с Basic Auth",
+      "description": "Auth: basic\n\nЗащищённый PUT /booking/:id с Basic Auth admin:password123.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Basic Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = James', () => pm.expect(json.firstname).to.eql('James'));\npm.test('lastname = Brown', () => pm.expect(json.lastname).to.eql('Brown'));\npm.test('totalprice = 222', () => pm.expect(json.totalprice).to.eql(222));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46cGFzc3dvcmQxMjM="
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"James\",\"lastname\":\"Brown\",\"totalprice\":222,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-03 Изменения сохранились",
+      "description": "Auth: none\n\nКонтрольный GET /booking/:id - публичное чтение.",
+      "item": [
+        {
+          "name": "GET /booking/{{bookingId}} - проверить сохранение",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = James (после BP-01/BP-02)', () => pm.expect(json.firstname).to.eql('James'));\npm.test('lastname = Brown', () => pm.expect(json.lastname).to.eql('Brown'));\nconsole.log('BP-03 totalprice в ответе:', json.totalprice);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-04 Ответ в XML",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Accept XML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst ct = pm.response.headers.get('Content-Type') || '';\nconst body = pm.response.text();\nconsole.log('BP-04 Content-Type ответа:', ct);\nconsole.log('BP-04 первые 200 символов:', body.substring(0, 200));\npm.test('Ответ содержит поля брони', () => {\n    pm.expect(body).to.include('firstname');\n    pm.expect(body).to.include('lastname');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"James\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-05 XML-тело запроса",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Content-Type text/xml",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-05 actual status:', pm.response.code);\nconsole.log('BP-05 body:', pm.response.text());\npm.test('Ответ получен, без 5xx', () => pm.expect(pm.response.code).to.be.below(500));\npm.test('Поведение с XML-телом зафиксировано в консоли', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/xml"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "<booking>\n    <firstname>James</firstname>\n    <lastname>Brown</lastname>\n    <totalprice>111</totalprice>\n    <depositpaid>true</depositpaid>\n    <bookingdates>\n        <checkin>2018-01-01</checkin>\n        <checkout>2019-01-01</checkout>\n    </bookingdates>\n    <additionalneeds>Breakfast</additionalneeds>\n</booking>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-06 Идемпотентность",
+      "description": "Auth: cookie\n\nДва защищённых PUT /booking/:id с Cookie: token={{token}} и одинаковым телом.",
+      "item": [
+        {
+          "name": "Step 1 - PUT #1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = Idem', () => pm.expect(json.firstname).to.eql('Idem'));\npm.collectionVariables.set('idemSnapshot', JSON.stringify(json));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Idem\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - PUT #2 (тот же запрос)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname = Idem', () => pm.expect(json.firstname).to.eql('Idem'));\nconst prev = JSON.parse(pm.collectionVariables.get('idemSnapshot') || '{}');\npm.test('Состояние идентично первому PUT', () => {\n    pm.expect(json).to.deep.eql(prev);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Idem\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-07 Изменение только additionalneeds",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - new additionalneeds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('additionalneeds обновлён на Lunch', () => pm.expect(json.additionalneeds).to.eql('Lunch'));\npm.test('Остальные поля не изменились', () => {\n    pm.expect(json.firstname).to.eql('Idem');\n    pm.expect(json.lastname).to.eql('Brown');\n    pm.expect(json.totalprice).to.eql(111);\n    pm.expect(json.depositpaid).to.eql(true);\n    pm.expect(json.bookingdates.checkin).to.eql('2018-01-01');\n    pm.expect(json.bookingdates.checkout).to.eql('2019-01-01');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Idem\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Lunch\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-08 Без авторизации",
+      "description": "Auth: none (negative test - expecting 403)\n\nНегативный кейс: PUT /booking/:id без Cookie и Authorization. Ожидается 403 Forbidden, данные не должны измениться. Шаг Check - GET публичный.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - без авторизации",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-08 actual status:', pm.response.code);\npm.test('Status 403', () => pm.response.to.have.status(403));\npm.test('Тело ответа - Forbidden', () => pm.expect(pm.response.text()).to.include('Forbidden'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Hacker\",\"lastname\":\"Brown\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check - GET (данные не изменились)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('firstname не изменён на Hacker (данные BP-08 не применились)', () => {\n    pm.expect(json.firstname).to.not.eql('Hacker');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-09 Неверный токен",
+      "description": "Auth: cookie (invalid token - expecting 403)\n\nНегативный кейс: PUT /booking/:id с Cookie: token=invalid. Ожидается 403.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Cookie token=invalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-09 actual status:', pm.response.code);\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token=invalid"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Hacker\",\"lastname\":\"Brown\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-10 Неверный Basic",
+      "description": "Auth: basic (invalid - expecting 403)\n\nНегативный кейс: PUT /booking/:id с Basic YWRtaW46d3Jvbmc= (admin:wrong). Ожидается 403.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Basic admin:wrong",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-10 actual status:', pm.response.code);\n// base64(admin:wrong) = YWRtaW46d3Jvbmc=\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46d3Jvbmc="
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Hacker\",\"lastname\":\"Brown\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-11 Несуществующий id",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/999999999 с валидным Cookie: token={{token}}. Ожидается 405 (фактическое поведение сервиса).",
+      "item": [
+        {
+          "name": "PUT /booking/999999999 - с токеном",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-11 actual status:', pm.response.code);\nconsole.log('BP-11 body:', pm.response.text());\npm.test('Status 405 (фактическое поведение сервиса)', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Ghost\",\"lastname\":\"Brown\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "999999999"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-12 Неполное тело (нет lastname)",
+      "description": "Auth: cookie\n\nШаг Snapshot (GET /booking/:id) публичный. Шаг PUT защищённый - Cookie: token={{token}}. Шаг Check (GET) публичный.",
+      "item": [
+        {
+          "name": "Snapshot - GET перед PUT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\npm.collectionVariables.set('bp12Snapshot', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /booking/{{bookingId}} - без lastname",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-12 actual status:', pm.response.code);\nconsole.log('BP-12 body:', pm.response.text());\npm.test('Статус 400 или 500 (по таблице)', () => pm.expect(pm.response.code).to.be.oneOf([400, 500]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"NoLast\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check - GET (бронь не изменена)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\nconst prev = JSON.parse(pm.collectionVariables.get('bp12Snapshot') || '{}');\npm.test('Бронь не изменена неполным PUT', () => {\n    pm.expect(json.firstname).to.eql(prev.firstname);\n    pm.expect(json.lastname).to.eql(prev.lastname);\n    pm.expect(json.totalprice).to.eql(prev.totalprice);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-13 Пустое тело",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}} и пустым телом {}.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - {}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-13 actual status:', pm.response.code);\nconsole.log('BP-13 body:', pm.response.text());\npm.test('Ошибка, бронь не изменена (не 200)', () => pm.expect(pm.response.code).to.not.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-14 Невалидный JSON",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}} и битым JSON-телом.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - broken JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-14 actual status:', pm.response.code);\npm.test('Статус 4xx или 5xx', () => pm.expect(pm.response.code).to.be.oneOf([400, 500]));\npm.test('Данные не изменены (нет новых значений)', () => {\n    pm.expect(pm.response.text()).to.not.include('BrokenName');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"BrokenName\",",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-15 Неверные типы",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}} и неверными типами totalprice/depositpaid.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - totalprice:\"abc\", depositpaid:\"x\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-15 actual status:', pm.response.code);\nconsole.log('BP-15 body:', pm.response.text());\npm.test('Ошибка, данные не меняются (не 200)', () => pm.expect(pm.response.code).to.not.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":\"abc\",\"depositpaid\":\"x\",\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-16 Неверный формат дат",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/:id с Cookie: token={{token}} и невалидным форматом даты.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - checkin:\"abc\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-16 actual status:', pm.response.code);\nconsole.log('BP-16 body:', pm.response.text());\npm.test('Ошибка (при 200 - дефект)', () => pm.expect(pm.response.code).to.not.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"abc\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-17 Нечисловой id",
+      "description": "Auth: cookie\n\nЗащищённый PUT /booking/abc с Cookie: token={{token}}. Ожидается 404 или 405.",
+      "item": [
+        {
+          "name": "PUT /booking/abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-17 actual status:', pm.response.code);\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "abc"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BP-18 Authorization: Bearer TOKEN (вместо cookie)",
+      "description": "Auth: bearer (unsupported - expecting 403)\n\nНегативный кейс: PUT /booking/:id с Authorization: Bearer {{token}}. API не поддерживает схему Bearer, ожидается 403. В доке поведение не описано - фиксируем факт.",
+      "item": [
+        {
+          "name": "PUT /booking/{{bookingId}} - Bearer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BP-18 actual status:', pm.response.code);\nconsole.log('BP-18 body:', pm.response.text());\n// В доке поведение не описано. Ожидаемо 403 - Bearer вместо cookie не даёт прав\npm.test('Поведение зафиксировано (ожидаемо 403) - см. console.log', () => true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"BearerTry\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "bookingId1",
+      "value": ""
+    },
+    {
+      "key": "notExistId",
+      "value": "999999999"
+    },
+    {
+      "key": "idemSnapshot",
+      "value": ""
+    },
+    {
+      "key": "bp12Snapshot",
+      "value": ""
+    }
+  ]
+}

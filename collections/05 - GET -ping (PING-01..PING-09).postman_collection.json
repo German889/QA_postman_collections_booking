@@ -1,0 +1,643 @@
+{
+  "info": {
+    "_postman_id": "1d05191f-479f-4271-a72b-01d3bc8c0d01",
+    "name": "05 - GET /ping (PING-01..PING-09)",
+    "description": "Тест-кейсы для GET /ping (PING-01..PING-09). Папки идут в порядке выполнения PING-01 -> PING-09. Папка PING-05 содержит 10 подряд идущих запросов для проверки стабильности. Переменные коллекции: baseUrl.\n\nМетки папок: Auth: none — публичный эндпоинт, авторизация не требуется; Auth: none (negative test) — негативный кейс на метод/путь, авторизация намеренно не отправляется.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PING-01 Сервис доступен",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /ping",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-01 actual status:', pm.response.code);\nconsole.log('PING-01 body:', pm.response.text());\npm.test('Status 201', () => pm.response.to.have.status(201));\npm.test('Тело ответа - Created', () => pm.expect(pm.response.text().trim()).to.eql('Created'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-02 Без авторизации",
+      "description": "Auth: none\n\nКейс явно проверяет, что /ping публичный - запрос отправляется без заголовков, ожидается 201 Created.",
+      "item": [
+        {
+          "name": "GET /ping - без заголовков",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-02 actual status:', pm.response.code);\npm.test('Status 201', () => pm.response.to.have.status(201));\npm.test('Тело ответа - Created', () => pm.expect(pm.response.text().trim()).to.eql('Created'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-03 Время ответа",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /ping - response time < 2000 ms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-03 response time (ms):', pm.response.responseTime);\npm.test('Status 201', () => pm.response.to.have.status(201));\npm.test('Response time < 2000 ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-04 Произвольные заголовки / Accept",
+      "description": "Auth: none",
+      "item": [
+        {
+          "name": "GET /ping - Accept application/json",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-04 actual status:', pm.response.code);\npm.test('Status 201', () => pm.response.to.have.status(201));\npm.test('Тело ответа - Created', () => pm.expect(pm.response.text().trim()).to.eql('Created'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-05 Стабильность (10 запросов подряд)",
+      "description": "Auth: none\n\n10 подряд идущих GET /ping. Каждый запрос независимо проверяет 201 Created.",
+      "item": [
+        {
+          "name": "Request 01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 01: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 02",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 02: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 03",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 03: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 04",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 04: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 05",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 05: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 06",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 06: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 07",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 07: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 08",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 08: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 09",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 09: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request 10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request 10: 201 Created', () => { pm.response.to.have.status(201); pm.expect(pm.response.text().trim()).to.eql('Created'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-06 POST /ping",
+      "description": "Auth: none (negative test - expecting 404)\n\nНегативный кейс: POST /ping не поддерживается API. Авторизация не отправляется - проверяем реакцию на неподдерживаемый метод.",
+      "item": [
+        {
+          "name": "POST /ping - неверный метод",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-06 actual status:', pm.response.code);\nconsole.log('PING-06 body:', pm.response.text());\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-07 PUT/DELETE /ping",
+      "description": "Auth: none (negative test - expecting 404/405)\n\nНегативный кейс: PUT и DELETE на /ping не поддерживаются. Авторизация не отправляется - проверяем реакцию на неподдерживаемый метод.",
+      "item": [
+        {
+          "name": "PUT /ping",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-07a PUT actual status:', pm.response.code);\npm.test('PUT: 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /ping",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-07b DELETE actual status:', pm.response.code);\npm.test('DELETE: 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-08 Неверный путь",
+      "description": "Auth: none (negative test - expecting 404)\n\nНегативный кейс: неверные пути /pingg и /ping/1 не существуют. Авторизация не отправляется.",
+      "item": [
+        {
+          "name": "GET /pingg",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-08a /pingg actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pingg",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pingg"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /ping/1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-08b /ping/1 actual status:', pm.response.code);\npm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PING-09 Query-параметры",
+      "description": "Auth: none\n\nКейс проверяет, что query-параметры игнорируются - ответ по-прежнему 201 Created.",
+      "item": [
+        {
+          "name": "GET /ping?x=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('PING-09 actual status:', pm.response.code);\nconsole.log('PING-09 body:', pm.response.text());\npm.test('Status 201 (параметры игнорируются)', () => pm.response.to.have.status(201));\npm.test('Тело ответа - Created', () => pm.expect(pm.response.text().trim()).to.eql('Created'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ping?x=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ping"
+              ],
+              "query": [
+                {
+                  "key": "x",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    }
+  ]
+}

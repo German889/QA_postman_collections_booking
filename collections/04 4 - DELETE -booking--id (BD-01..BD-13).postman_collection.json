@@ -1,0 +1,1187 @@
+{
+  "info": {
+    "_postman_id": "1db7f6f0-c61e-44e8-84ab-172d1ea908a4",
+    "name": "04 4 - DELETE /booking/:id (BD-01..BD-13)",
+    "description": "Тест-кейсы для DELETE /booking/:id (BD-01..BD-13). Папки идут в порядке выполнения BD-01 -> BD-13. Папка PRECONDITION получает токен (token) и создаёт бронь Jim Brown (bookingId). Папки, которые удаляют бронь (BD-01..BD-04, BD-08..BD-13), создают собственные временные брони, чтобы не портить состояние друг друга. Переменные коллекции: baseUrl, token, bookingId, tempBookingId, protectedBookingId, notExistId.\n\nМетки папок: Auth: none — публичный эндпоинт; Auth: cookie — токен в Cookie: token={{token}}; Auth: basic — Basic Auth admin:password123; Auth: none (negative test) — негативный кейс, авторизация намеренно не отправляется; Auth: cookie (invalid) — токен передан, но намеренно невалиден; Auth: basic (invalid) — Basic Auth передан, но намеренно невалиден.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23679580"
+  },
+  "item": [
+    {
+      "name": "PRECONDITION Токен + создать бронь",
+      "description": "Auth: none\n\nОба шага публичные: POST /auth выдаёт токен, POST /booking создаёт бронь.",
+      "item": [
+        {
+          "name": "Step 1 - POST /auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('token не пустой', () => pm.expect(json.token).to.be.a('string').and.not.empty);\npm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"admin\",\"password\":\"password123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - POST /booking (Jim Brown)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('bookingId', json.bookingid);\nconsole.log('PRECONDITION bookingId =', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Jim\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"},\"additionalneeds\":\"Breakfast\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-01 Удаление с токеном",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) публичный. Step 2 (DELETE /booking/:id) защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать временную бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('bookingid - число', () => pm.expect(json.bookingid).to.be.a('number'));\npm.collectionVariables.set('tempBookingId', json.bookingid);\nconsole.log('BD-01 временная бронь:', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp01\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{tempBookingId}} - Cookie token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-01 actual status:', pm.response.code);\nconsole.log('BD-01 body:', pm.response.text());\npm.test('Status 201 (так отвечает API)', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-02 Удаление с Basic Auth",
+      "description": "Auth: basic\n\nStep 1 (POST /booking) публичный. Step 2 (DELETE /booking/:id) защищённый - Basic Auth admin:password123.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать временную бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('tempBookingId', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp02\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{tempBookingId}} - Basic Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-02 actual status:', pm.response.code);\npm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46cGFzc3dvcmQxMjM="
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-03 Бронь реально удалена",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) и Step 3 (GET) публичные. Step 2 (DELETE /booking/:id) защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('tempBookingId', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp03\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{tempBookingId}} (с токеном)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - GET /booking/{{tempBookingId}} (ожидается 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-03 GET after DELETE status:', pm.response.code);\npm.test('Status 404 (бронь удалена)', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-04 Нет id в списке",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) и Step 3 (GET /booking) публичные. Step 2 (DELETE /booking/:id) защищённый - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('tempBookingId', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp04\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{tempBookingId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - GET /booking (id отсутствует в списке)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('Ответ - массив', () => pm.expect(json).to.be.an('array'));\nconst target = String(pm.collectionVariables.get('tempBookingId'));\nconst ids = json.map(x => String(x.bookingid));\nconsole.log('BD-04 всего в списке:', json.length, '| target:', target, '| найден:', ids.includes(target));\npm.test('Удалённый id отсутствует в списке', () => {\n    pm.expect(ids).to.not.include(target);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-05 Без авторизации",
+      "description": "Auth: none (negative test - expecting 403)\n\nStep 1 (POST /booking) и Step 3 (GET) публичные. Step 2 (DELETE /booking/:id) намеренно без авторизации - ожидается 403. Бронь должна остаться нетронутой.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать защищённую бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('protectedBookingId', json.bookingid);\nconsole.log('BD-05 защищённая бронь:', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Protected\",\"lastname\":\"Booking\",\"totalprice\":42,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2024-06-01\",\"checkout\":\"2024-06-10\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{protectedBookingId}} - без авторизации",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-05 actual status:', pm.response.code);\nconsole.log('BD-05 body:', pm.response.text());\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{protectedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{protectedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - GET /booking/{{protectedBookingId}} (бронь существует)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (бронь существует, не удалена)', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.test('Данные брони не изменены', () => {\n    pm.expect(json.firstname).to.eql('Protected');\n    pm.expect(json.lastname).to.eql('Booking');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{protectedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{protectedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-06 Неверный токен",
+      "description": "Auth: cookie (invalid token - expecting 403)\n\nНегативный кейс: DELETE /booking/:id с Cookie: token=invalid. Ожидается 403.",
+      "item": [
+        {
+          "name": "DELETE /booking/{{protectedBookingId}} - token=invalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-06 actual status:', pm.response.code);\nconsole.log('BD-06 body:', pm.response.text());\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token=invalid"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{protectedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{protectedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-07 Неверный Basic",
+      "description": "Auth: basic (invalid - expecting 403)\n\nНегативный кейс: DELETE /booking/:id с Basic YWRtaW46d3Jvbmc= (admin:wrong). Ожидается 403.",
+      "item": [
+        {
+          "name": "DELETE /booking/{{protectedBookingId}} - Basic admin:wrong",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-07 actual status:', pm.response.code);\nconsole.log('BD-07 body:', pm.response.text());\n// base64(admin:wrong) = YWRtaW46d3Jvbmc=\npm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic YWRtaW46d3Jvbmc="
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{protectedBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{protectedBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-08 Несуществующий id",
+      "description": "Auth: cookie\n\nЗащищённый DELETE /booking/999999999 с валидным Cookie: token={{token}}. Ожидается 405 (фактическое поведение сервиса).",
+      "item": [
+        {
+          "name": "DELETE /booking/999999999 - с токеном",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-08 actual status:', pm.response.code);\nconsole.log('BD-08 body:', pm.response.text());\npm.test('Status 405 (фактическое поведение сервиса)', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "999999999"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-09 Повторное удаление",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) публичный. Step 2 и Step 3 (DELETE /booking/:id) защищённые - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать временную бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('tempBookingId', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp09\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE #1 (должно быть 201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-09 DELETE #1 status:', pm.response.code);\npm.test('Первый DELETE: 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - DELETE #2 (повторное)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-09 DELETE #2 status:', pm.response.code);\nconsole.log('BD-09 DELETE #2 body:', pm.response.text());\npm.test('Второй DELETE: 405 (фактическое поведение)', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-10 Нечисловой id",
+      "description": "Auth: cookie\n\nЗащищённый DELETE /booking/abc с Cookie: token={{token}}. Ожидается 404 или 405.",
+      "item": [
+        {
+          "name": "DELETE /booking/abc - с токеном",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-10 actual status:', pm.response.code);\nconsole.log('BD-10 body:', pm.response.text());\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "abc"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-11 Отрицательный/0 id",
+      "description": "Auth: cookie\n\nДва защищённых DELETE с Cookie: token={{token}} - для /booking/0 и /booking/-1. Ожидается 404 или 405.",
+      "item": [
+        {
+          "name": "DELETE /booking/0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-11a actual status:', pm.response.code);\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "0"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /booking/-1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-11b actual status:', pm.response.code);\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "-1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-12 Удаление без id",
+      "description": "Auth: cookie\n\nЗащищённый DELETE /booking с Cookie: token={{token}}. Ожидается 404 или 405.",
+      "item": [
+        {
+          "name": "DELETE /booking - без id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-12 actual status:', pm.response.code);\nconsole.log('BD-12 body:', pm.response.text());\npm.test('Status 404 или 405', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BD-13 PUT/PATCH после удаления",
+      "description": "Auth: cookie\n\nStep 1 (POST /booking) публичный. Step 2 (DELETE) и Step 3 (PUT) защищённые - Cookie: token={{token}}.",
+      "item": [
+        {
+          "name": "Step 1 - POST /booking (создать временную бронь)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));\nconst json = pm.response.json();\npm.collectionVariables.set('tempBookingId', json.bookingid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Temp13\",\"lastname\":\"Delete\",\"totalprice\":1,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2024-01-01\",\"checkout\":\"2024-01-02\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - DELETE /booking/{{tempBookingId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - PUT /booking/{{tempBookingId}} после удаления",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "console.log('BD-13 PUT after DELETE status:', pm.response.code);\nconsole.log('BD-13 PUT body:', pm.response.text());\npm.test('Status 405 (ожидаемое поведение сервиса)', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Ghost\",\"lastname\":\"Brown\",\"totalprice\":111,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2018-01-01\",\"checkout\":\"2019-01-01\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking/{{tempBookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking",
+                "{{tempBookingId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "tempBookingId",
+      "value": ""
+    },
+    {
+      "key": "protectedBookingId",
+      "value": ""
+    },
+    {
+      "key": "notExistId",
+      "value": "999999999"
+    }
+  ]
+}
